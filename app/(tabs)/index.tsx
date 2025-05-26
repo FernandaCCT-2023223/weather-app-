@@ -1,75 +1,149 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+// Define article structure to help with autocompletion and avoid VSCode errors
+type Article = {
+  title: string;
+  description?: string;
+  link?: string;
+  thumbnail?: string;
+};
 
 export default function HomeScreen() {
+  const [articles, setArticles] = useState<Article[]>([]);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const response = await fetch(
+          'https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss/search?q=weather'
+        );
+        const data = await response.json();
+        setArticles(data.items || []);
+      } catch (error) {
+        console.error('Error fetching news:', error);
+      }
+    };
+
+    fetchNews();
+  }, []);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
+    <ScrollView style={styles.container}>
+      {/* Header with image */}
+      <View style={styles.header}>
         <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+          source={require('../../assets/images/wheatherImage.webp')}
+          style={styles.headerImage}
+          resizeMode="cover"
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <View style={styles.headerOverlay}>
+          <Text style={styles.headerText}>🌤️ Welcome to the Weather App</Text>
+        </View>
+      </View>
+
+      {/* News Section */}
+      <View style={styles.newsSection}>
+        <Text style={styles.sectionTitle}>📰 Weather News</Text>
+        {articles.length === 0 ? (
+          <Text style={{ color: '#94a3b8' }}>Loading news...</Text>
+        ) : (
+          articles.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.newsItem}
+              onPress={() => {
+                if (item.link) Linking.openURL(item.link);
+              }}
+            >
+              {item.thumbnail && (
+                <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.newsTitle}>{item.title}</Text>
+                <Text style={styles.newsSummary}>
+                  {item.description
+                    ? item.description.replace(/<[^>]+>/g, '').slice(0, 100) + '...'
+                    : 'No description available.'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  header: {
+    height: 200,
+    position: 'relative',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  headerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  headerOverlay: {
     position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerText: {
+    fontSize: 24,
+    color: '#f1f5f9',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingHorizontal: 12,
+  },
+  newsSection: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    color: '#38bdf8',
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  newsItem: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  thumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  newsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#e2e8f0',
+    marginBottom: 4,
+  },
+  newsSummary: {
+    fontSize: 14,
+    color: '#94a3b8',
   },
 });
