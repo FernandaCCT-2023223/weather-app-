@@ -2,8 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
+  ActivityIndicator, Animated, FlatList,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -13,7 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
-  View,
+  View
 } from 'react-native';
 
 function normaliseCityName(name: string) {
@@ -38,6 +37,7 @@ export default function SearchScreen() {
   const [forecast, setForecast] = useState<any[]>([]);
   const [fromCache, setFromCache] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const weatherOpacity = useState(new Animated.Value(0))[0];
 
 
   useEffect(() => {
@@ -114,7 +114,14 @@ export default function SearchScreen() {
         };
       });
 
+      weatherOpacity.setValue(0);
       setWeather(data);
+      Animated.timing(weatherOpacity, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+      
       setForecast(dailyForecast);
 
       const cachePayload = {
@@ -203,7 +210,7 @@ export default function SearchScreen() {
           </Text>
         )}
         {weather && (
-          <View style={styles.weatherBox}>
+          <Animated.View style={[styles.weatherBox, {opacity: weatherOpacity }]}>
             <Text style={styles.weatherCity}>{weather.name}, {weather.sys?.country}</Text>
             <Text style={styles.weatherDate}>{new Date(weather.dt * 1000).toLocaleString()}</Text>
             <Image
@@ -211,7 +218,7 @@ export default function SearchScreen() {
               style={{ width: 100, height: 100, marginBottom: 10 }}
             />
             <Text style={styles.temp}>{Math.round(weather.main.temp)}° {unit === 'metric' ? 'C' : 'F'}</Text>
-          </View>
+          </Animated.View>
         )}
 
         {forecast.length > 0 && (
