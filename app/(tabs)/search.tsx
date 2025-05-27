@@ -10,6 +10,7 @@
  */
 
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { ThemedText } from '@/components/ThemedText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as Location from 'expo-location';
@@ -71,6 +72,9 @@ export default function SearchScreen() {
     });
     return () => unsubscribe();
   }, []);
+
+  const buttonText = '#f8fafc';
+  const buttonActive = '#22c55e'; 
 
   /**
    * Fetches weather and forecast for a given city.
@@ -430,5 +434,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#475569',
     borderRadius: 8,
     marginBottom: 6,
+  },
+  actionButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
   },
 });
