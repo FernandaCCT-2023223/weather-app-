@@ -19,7 +19,9 @@ function normaliseCityName(name: string) {
   return name
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, ' ')
+    .normalize('NFD') // Remove acentos
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ') // Remove espaços extras
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
@@ -39,12 +41,12 @@ export default function SearchScreen() {
   const [isOffline, setIsOffline] = useState(false);
   const weatherOpacity = useState(new Animated.Value(0))[0];
 
-
   useEffect(() => {
     AsyncStorage.getItem('searchHistory').then(data => {
       if (data) setHistory(JSON.parse(data));
     });
   }, []);
+
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsOffline(!state.isConnected);
@@ -69,13 +71,19 @@ export default function SearchScreen() {
 
       const now = Date.now();
       const cacheAge = cachedTimestamp ? now - parseInt(cachedTimestamp) : Infinity;
-      const maxAge = 30 * 60 * 1000; // 30 minutos
+      const maxAge = 30 * 60 * 1000;
 
       if (cachedData && cacheAge < maxAge) {
         const parsed = JSON.parse(cachedData);
-        setWeather(parsed.weather);
-        setForecast(parsed.forecast);
-        setFromCache(true);
+        if (parsed.weather) {
+          setWeather(parsed.weather);
+          setForecast(parsed.forecast);
+          setFromCache(true);
+
+          const updatedHistory = [normalisedCity, ...history.filter(c => c.toLowerCase() !== normalisedCity.toLowerCase())].slice(0, 10);
+          setHistory(updatedHistory);
+          await AsyncStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
+        }
         return;
       }
 
@@ -121,7 +129,7 @@ export default function SearchScreen() {
         duration: 500,
         useNativeDriver: true,
       }).start();
-      
+
       setForecast(dailyForecast);
 
       const cachePayload = {
@@ -130,6 +138,11 @@ export default function SearchScreen() {
       };
       await AsyncStorage.setItem(cacheKey, JSON.stringify(cachePayload));
       await AsyncStorage.setItem(cacheTimestampKey, now.toString());
+
+      const updatedHistory = [normalisedCity, ...history.filter(c => c.toLowerCase() !== normalisedCity.toLowerCase())].slice(0, 10);
+      setHistory(updatedHistory);
+      await AsyncStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
+
     } catch (err: any) {
       setError(err.message || 'Failed to fetch weather.');
     } finally {
@@ -141,17 +154,8 @@ export default function SearchScreen() {
     if (!city.trim()) return setError('Please enter a city name.');
     const normalisedCity = normaliseCityName(city);
     await fetchWeather(normalisedCity);
-  
-    // Só adiciona ao histórico se encontrou a cidade
-    if (!error && weather) {
-      const newHistory = [normalisedCity, ...history.filter(c => c.toLowerCase() !== normalisedCity.toLowerCase())];
-      setHistory(newHistory);
-      await AsyncStorage.setItem('searchHistory', JSON.stringify(newHistory));
-    }
-  
     setCity('');
   };
-  
 
   const clearHistory = async () => {
     setHistory([]);
