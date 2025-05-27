@@ -1,50 +1,99 @@
-# Welcome to your Expo app 👋
+# Weather Explorer App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Welcome to the Weather Explorer App, built by the CCT lads for the Cross Platform Development module (2025).
 
-## Get started
+## What’s this then?
+This wee app lets you:
+- Search for weather by city name, or use your current location
+- See the current weather, a 5-day forecast, and your search history
+- Switch between Celsius and Fahrenheit
+- Enjoy a tidy UI that follows your chosen theme (light, dark, or system)
+- Read the latest weather news headlines
 
-1. Install dependencies
+## How to run it
+1. Clone the repo and `cd` into the folder.
+2. Run `npm install` or `yarn` to get all the bits.
+3. Start the app with `npx expo start`.
+4. Scan the QR code with Expo Go, or run on web.
 
-   ```bash
+## Main files
+- `app/(tabs)/search.tsx` – Main weather search screen
+- `app/(tabs)/index.tsx` – News headlines tab
+- `components/ThemeSwitcher.tsx` – Theme toggle button
+- `components/ThemeContext.tsx` – Theme context provider
+- `hooks/useColorScheme.ts` – Decides which theme to use
+- `constants/Colors.ts` – All the colours for the app
+
+## API Integration
+- **Weather:** Uses [OpenWeatherMap](https://openweathermap.org/) for current weather and 5-day forecast. API key is hardcoded for demo purposes (replace with your own for production).
+- **News:** Fetches weather news from Google News RSS via rss2json.
+- **Geolocation:** Uses `expo-location` to fetch the user's current position (asks for permission).
+
+## State Management
+- Uses React's `useState` and `useEffect` for local state.
+- Search history and theme preference are persisted with `AsyncStorage`.
+- Theme is managed globally with React Context (`ThemeContext.tsx`), so the whole app updates when you change it.
+
+## Design Decisions
+- **Tabs:** Navigation is handled with Expo Router's Tabs, with custom icons and haptic feedback for a bit of craic.
+- **Theming:** All screens and components use the theme context, so switching between light, dark, or system is instant and global.
+- **Caching:** Weather data is cached for 10 minutes to avoid hammering the API and to support offline use.
+- **Accessibility:** Good contrast, scalable text, and accessible labels on buttons.
+
+## Error Handling & Offline Support
+- If the user is offline, cached data is shown if available.
+- All API calls are wrapped in try/catch, with friendly error messages for the user.
+- If location permission is denied, the app tells you so (no silent failures).
+
+## Running Unit Tests
+
+This project includes a simple unit test for the `normaliseCityName` utility function, located in `utils/__tests__/normaliseCityName.test.ts`.
+
+### How to run the test
+
+1. Make sure you have all dev dependencies installed:
+   ```sh
    npm install
    ```
 
-2. Start the app
-
-   ```bash
-   npx expo start
+2. Run the test suite using Jest:
+   ```sh
+   npx jest
+   ```
+   or
+   ```sh
+   npm test
    ```
 
-In the output, you'll find options to open the app in a
+3. You should see output indicating whether the test passed or failed.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### What is being tested?
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+The test checks that the `normaliseCityName` function:
+- Capitalises single-word and multi-word city names correctly
+- Trims extra spaces
+- Handles empty strings gracefully
 
-## Get a fresh project
+## Potential Future Improvements
+- Add weather alerts and notifications
+- Interactive weather maps
+- Multiple saved locations
+- Share weather info via social media
+- Custom animations for different weather conditions
+- More detailed accessibility features
 
-When you're ready, run:
+## Reflections
+- Building with Expo and React Native made cross-platform development a breeze.
+- Managing theme globally with context keeps the code tidy and easy to maintain.
+- Handling geolocation and permissions was grand with Expo, but always test on a real device!
+- Caching and offline support are essential for a good user experience.
 
-```bash
-npm run reset-project
-```
+## Credits
+- Built by Caio Jacob, Kevin Esteff, Matheus Leandro and Fernanda de Souza, 2025.
+- Weather data from OpenWeatherMap.
+- News from Google News RSS.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
 
-To learn more about developing your project with Expo, look at the following resources:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.

@@ -1,21 +1,23 @@
 /**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
+ * useThemeColor
+ * --------------
+ * This handy hook gives you the right colour for the current theme.
+ * Pass in a light and dark value, and it'll pick the right one based on the user's choice.
+ * Used by all ThemedView and ThemedText components to keep the look tidy.
+ * 
  */
 
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from './useColorScheme';
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+  colorName: string
 ) {
-  const theme = useColorScheme() ?? 'light';
-  const colorFromProps = props[theme];
-
-  if (colorFromProps) {
-    return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
+  const theme = useColorScheme();
+  // You'd have a Colors object with all your theme colours
+  // For now, just pick the right one from props
+  if (theme === 'dark') {
+    return props.dark ?? '#222';
   }
+  return props.light ?? '#fff';
 }

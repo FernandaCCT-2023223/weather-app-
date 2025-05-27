@@ -1,5 +1,19 @@
+/**
+ * SearchScreen
+ * -------------
+ * This is the main weather search screen for the app.
+ * Here you can search for weather by city name, or use your current location.
+ * It shows the current weather, a 5-day forecast, and keeps a wee history of your searches.
+ * You can also clear your search history, and switch between Celsius and Fahrenheit.
+ * All the UI follows the app's theme (light/dark/system).
+ * 
+ */
+
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { ThemedText } from '@/components/ThemedText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Animated, FlatList,
@@ -15,6 +29,10 @@ import {
   View
 } from 'react-native';
 
+/**
+ * Normalises a city name so it looks tidy.
+ * E.g. "dublin" becomes "Dublin", "new york" becomes "New York".
+ */
 function normaliseCityName(name: string) {
   return name
     .trim()
@@ -28,6 +46,7 @@ function normaliseCityName(name: string) {
 export default function SearchScreen() {
   const { width } = useWindowDimensions();
 
+  // State for city input, units, weather data, loading, error, history, forecast, etc.
   const [city, setCity] = useState('');
   const [unit, setUnit] = useState<'metric' | 'imperial'>('metric');
   const [weather, setWeather] = useState<any>(null);
@@ -39,12 +58,14 @@ export default function SearchScreen() {
   const [isOffline, setIsOffline] = useState(false);
   const weatherOpacity = useState(new Animated.Value(0))[0];
 
-
+  // On mount, load search history from storage
   useEffect(() => {
     AsyncStorage.getItem('searchHistory').then(data => {
       if (data) setHistory(JSON.parse(data));
     });
   }, []);
+
+  // Listen for network changes
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsOffline(!state.isConnected);
@@ -52,6 +73,13 @@ export default function SearchScreen() {
     return () => unsubscribe();
   }, []);
 
+  const buttonText = '#f8fafc';
+  const buttonActive = '#22c55e'; 
+
+  /**
+   * Fetches weather and forecast for a given city.
+   * Uses cache if available and recent.
+   */
   const fetchWeather = async (cityName: string, units = unit) => {
     setLoading(true);
     setError('');
@@ -137,6 +165,71 @@ export default function SearchScreen() {
     }
   };
 
+  /**
+   * Fetches weather and forecast for the user's current location.
+   * Asks for location permission.
+   */
+  const fetchWeatherByLocation = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Permission to access location was denied');
+        setLoading(false);
+        return;
+      }
+      let location = await Location.getCurrentPositionAsync({});
+      const lat = location.coords.latitude;
+      const lon = location.coords.longitude;
+
+      const apiKey = '175890de4b6acd7fd24e63f41dc2cf6b';
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${unit}`
+      );
+      if (!response.ok) throw new Error('Could not fetch weather for your location.');
+      const data = await response.json();
+      setWeather(data);
+
+      // Fetch forecast
+      const forecastRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${unit}`
+      );
+      if (!forecastRes.ok) throw new Error('Could not fetch forecast for your location.');
+      const forecastData = await forecastRes.json();
+
+      // Agrupe e processe o forecast igual ao fetchWeather
+      const daily: Record<string, any[]> = {};
+      forecastData.list.forEach((item: any) => {
+        const date = new Date(item.dt * 1000).toLocaleDateString('en-IE');
+        if (!daily[date]) daily[date] = [];
+        daily[date].push(item);
+      });
+      const dailyForecast = Object.entries(daily).slice(0, 5).map(([date, items]) => {
+        const temps = items.map((i: any) => i.main.temp);
+        const min = Math.min(...temps);
+        const max = Math.max(...temps);
+        const iconItem = items[Math.floor(items.length / 2)] || items[0];
+        return {
+          date,
+          min,
+          max,
+          icon: iconItem.weather[0].icon,
+          main: iconItem.weather[0].main,
+        };
+      });
+      setForecast(dailyForecast);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch weather by location.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Handles search button press.
+   * Adds city to history if successful.
+   */
   const handleSearch = async () => {
     if (!city.trim()) return setError('Please enter a city name.');
     const normalisedCity = normaliseCityName(city);
@@ -151,13 +244,19 @@ export default function SearchScreen() {
   
     setCity('');
   };
-  
 
+  /**
+   * Clears the search history.
+   */
   const clearHistory = async () => {
     setHistory([]);
     await AsyncStorage.removeItem('searchHistory');
   };
 
+  /**
+   * Handles tap on a previous search.
+   * Searches for that city again.
+   */
   const handleHistoryPress = (item: string) => {
     setCity(item);
     handleSearch();
@@ -166,6 +265,7 @@ export default function SearchScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollWrapper} keyboardShouldPersistTaps="handled">
+        <ThemeSwitcher />
         <View style={styles.panel}>
           <Text style={styles.title}>🌤️ Weather App</Text>
           <Text style={styles.notice}>Enter a city to get current weather and a 5-day forecast</Text>
@@ -182,6 +282,15 @@ export default function SearchScreen() {
 
           <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
             <Text style={styles.searchBtnText}>🔍 Search</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={fetchWeatherByLocation}
+            style={[styles.actionButton, { backgroundColor: buttonActive }]}
+          >
+            <ThemedText style={{ color: buttonText, fontWeight: 'bold' }}>
+              📍 Use Current Location
+            </ThemedText>
           </TouchableOpacity>
 
           {error && <Text style={styles.error}>{error}</Text>}
@@ -325,5 +434,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#475569',
     borderRadius: 8,
     marginBottom: 6,
+  },
+  actionButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
   },
 });

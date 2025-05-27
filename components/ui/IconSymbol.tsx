@@ -1,7 +1,7 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
+import { SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
@@ -19,6 +19,15 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
 } as IconMapping;
+
+/**
+ * IconSymbol
+ * -------------
+ * This handy wee component renders an icon for use in the tab bar or anywhere else you fancy.
+ * Makes it easy to keep your icons tidy and consistent across the app.
+ * Used in the TabLayout for the Search and News tabs.
+ * 
+ */
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.

@@ -1,3 +1,14 @@
+/**
+ * NewsScreen
+ * -------------
+ * This tab shows the latest weather news headlines.
+ * Fetches news articles from a public RSS feed and displays them in a tidy list.
+ * Each article can be tapped to open the full story in your browser.
+ * The look of the screen follows the app's theme (light/dark/system).
+ * 
+ */
+
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'; // add this import
 import React, { useEffect, useState } from 'react';
 import {
   Image,
@@ -38,6 +49,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      <ThemeSwitcher /> {/* add this line at the top */}
       {/* Header with image */}
       <View style={styles.header}>
         <Image
